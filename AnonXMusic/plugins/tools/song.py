@@ -14,7 +14,7 @@ from AnonXMusic import YouTube, app
 from AnonXMusic.utils.decorators.language import language
 from config import BANNED_USERS
 
-logger = logging.getLogger(__name__)  # ✅ FIXED - Correct syntax
+logger = logging.getLogger(__name__)
 
 POWERED_BY = "🤞 **𝐏ᴏᴡєʀєᴅ 𝐁ʏ ➛ BETA BOTS.🙂❤️**"
 
@@ -209,12 +209,43 @@ async def song_download(client, message: Message, _):
         await status_msg.edit_text(user_friendly_msg)
     
     finally:
-        # 🧹 CLEANUP
+        # 🧹 CLEANUP - FIXED INDENTATION
         try:
             await status_msg.delete()
-        except:
+        except Exception:
             pass
         
-        # ✅ SAFE FILE CLEANUP
         if file_path is not None:
-           
+            try:
+                path_obj = Path(file_path)
+                if path_obj.exists():
+                    path_obj.unlink()
+                    logger.debug(f"🧹 Cleanup: {file_path}")
+            except Exception as cleanup_err:
+                logger.warning(f"Cleanup failed {file_path}: {cleanup_err}")
+
+
+# 🔗 AUTO YOUTUBE HANDLER
+@app.on_message(
+    filters.regex(r"https?://(?:www\.)?(?:youtube\.com|youtu\.be|music\.youtube\.com)/.+")
+    & ~filters.command(["song", "music", "audio", "mp3"])
+    & ~BANNED_USERS
+)
+@language
+async def auto_youtube_song(client, message: Message, _):
+    """🔗 Auto-download from YouTube URLs"""
+    if message.reply_to_message or message.media:
+        return
+    await song_download(client, message, _)
+
+
+# 📎 CAPTION HANDLER
+@app.on_message(
+    filters.video | filters.audio | filters.voice | filters.document
+    & filters.caption & filters.regex(r"(song|music|audio)", re.IGNORECASE)
+    & ~BANNED_USERS
+)
+@language
+async def song_from_caption(client, message: Message, _):
+    """📎 Song from media caption"""
+    await song_download(client, message, _)
