@@ -3,6 +3,7 @@ import os
 import re
 import logging
 from typing import Optional, Tuple
+from pathlib import Path
 
 from pyrogram import filters
 from pyrogram.types import Message
@@ -80,6 +81,8 @@ async def song_download(client, message: Message, _):
         f"🔍 **Searching your song...**\n\n{POWERED_BY}"
     )
     
+    file_path: Optional[str] = None  # ✅ Explicitly typed and initialized
+    
     try:
         logger.info(f"Searching: {query[:50]}")
         title, duration_text, duration_sec, thumb, video_id = await YouTube.details(query)
@@ -94,23 +97,33 @@ async def song_download(client, message: Message, _):
             f"⬇️ **Downloading MP3...**\n\n{POWERED_BY}"
         )
         
+        # ✅ Download might return None - handle gracefully
         file_path, _ = await YouTube.download(
             video_id, status_msg, videoid=True
         )
         
-        if not os.path.exists(file_path):
-            raise RuntimeError("Download failed - file missing")
+        # ✅ Comprehensive file validation
+        if not file_path:
+            raise RuntimeError("Download returned None path")
+        
+        file_path_obj = Path(file_path)
+        if not file_path_obj.exists() or not file_path_obj.is_file():
+            raise RuntimeError(f"Downloaded file not found: {file_path}")
+        
+        # ✅ Verify file size (basic sanity check)
+        if file_path_obj.stat().st_size == 0:
+            raise RuntimeError("Downloaded empty file")
         
         user = message.from_user
         requester = (
-            f"[{user.first_name}](tg://user?id={user.id})"
+            f"[{html.escape(user.first_name or user.first_name)}](tg://user?id={user.id})"
             if user else "Anonymous"
         )
         
         caption = (
             f"🎵 **{html.escape(title[:45])}**\n\n"
             f"⏱️ **Duration:** `{duration_text or 'LIVE'}`\n"
-            f"👤 **By:** {requester}\n"
+            f"👤 **Requested by:** {requester}\n"
             f"🎼 **Quality:** 320Kbps\n"
             f"🔗 [📺 Source](https://youtube.com/watch?v={video_id})\n\n"
             f"{POWERED_BY}"
@@ -122,34 +135,42 @@ async def song_download(client, message: Message, _):
         
         await app.send_audio(
             chat_id=message.chat.id,
-            audio=file_path,
+            audio=str(file_path),  # ✅ Ensure string
             caption=caption,
             duration=duration_sec or 0,
             title=title[:100],
             performer="BETA BOTS",
             thumb=thumb,
-            reply_to_message_id=message.id
+            reply_to_message_id=message.id,
+            progress_callback=lambda current, total: None  # Optional
         )
         
-        logger.info(f"✅ Song sent: {title[:50]}")
+        logger.info(f"✅ Song sent successfully: {title[:50]}")
         
     except Exception as e:
-        logger.error(f"Song error: {str(e)}")
+        logger.error(f"Song download error: {str(e)}", exc_info=True)
         await status_msg.edit_text(
             f"❌ **Download Failed!**\n\n"
-            f"`{html.escape(str(e)[:80])}`\n\n"
+            f"```{html.escape(str(e)[:100])}```\n\n"
             f"{POWERED_BY}"
         )
-        return
     
     finally:
+        # ✅ Safe status message cleanup
         try:
             await status_msg.delete()
         except:
             pass
         
-        if 'file_path' in locals() and os.path.exists(file_path):
-            os.remove(file_path)
+        # ✅ FIXED - Safe file cleanup (THIS WAS THE CRASHING PART)
+        if file_path is not None:
+            file_path_obj = Path(file_path)
+            if file_path_obj.exists() and file_path_obj.is_file():
+                try:
+                    file_path_obj.unlink()
+                    logger.debug(f"✅ Temporary file cleaned up: {file_path}")
+                except Exception as cleanup_err:
+                    logger.warning(f"Failed to cleanup {file_path}: {cleanup_err}")
 
 
 @app.on_message(
