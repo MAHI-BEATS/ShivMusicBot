@@ -52,8 +52,10 @@ class Userbot(Client):
         if config.STRING1:
             await self.one.start()
             try:
-                await self.one.join_chat("College_wali_masti")
-                await self.one.join_chat("Saykkunomusic")
+                await self.one.join_chat("MOVIE_X_UPDATE")
+                await self.one.join_chat("BETABOT_SUPPORT")
+                await self.one.join_chat("BETABOT_HUB")
+                await self.one.join_chat("SUKOON_S")
             except:
                 pass
             assistants.append(1)
@@ -76,8 +78,10 @@ class Userbot(Client):
         if config.STRING2:
             await self.two.start()
             try:
-                await self.two.join_chat("College_wali_masti")
-                await self.one.join_chat("Saykkunomusic")
+                await self.one.join_chat("MOVIE_X_UPDATE")
+                await self.one.join_chat("BETABOT_SUPPORT")
+                await self.one.join_chat("BETABOT_HUB")
+                await self.one.join_chat("SUKOON_S")
             except:
                 pass
             assistants.append(2)
@@ -100,8 +104,10 @@ class Userbot(Client):
         if config.STRING3:
             await self.three.start()
             try:
-                await self.three.join_chat("College_wali_masti")
-                await self.one.join_chat("Saykkunomusic")
+                await self.one.join_chat("MOVIE_X_UPDATE")
+                await self.one.join_chat("BETABOT_SUPPORT")
+                await self.one.join_chat("BETABOT_HUB")
+                await self.one.join_chat("SUKOON_S")
             except:
                 pass
             assistants.append(3)
@@ -124,8 +130,10 @@ class Userbot(Client):
         if config.STRING4:
             await self.four.start()
             try:
-                await self.four.join_chat("College_wali_masti")
-                await self.one.join_chat("Saykkunomusic")
+                await self.one.join_chat("MOVIE_X_UPDATE")
+                await self.one.join_chat("BETABOT_SUPPORT")
+                await self.one.join_chat("BETABOT_HUB")
+                await self.one.join_chat("SUKOON_S")
             except:
                 pass
             assistants.append(4)
@@ -148,8 +156,10 @@ class Userbot(Client):
         if config.STRING5:
             await self.five.start()
             try:
-                await self.five.join_chat("College_wali_masti")
-                await self.one.join_chat("Saykkunomusic")
+                await self.one.join_chat("MOVIE_X_UPDATE")
+                await self.one.join_chat("BETABOT_SUPPORT")
+                await self.one.join_chat("BETABOT_HUB")
+                await self.one.join_chat("SUKOON_S")
             except:
                 pass
             assistants.append(5)
