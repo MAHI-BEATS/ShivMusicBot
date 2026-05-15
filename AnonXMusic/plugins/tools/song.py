@@ -14,7 +14,7 @@ from AnonXMusic import YouTube, app
 from AnonXMusic.utils.decorators.language import language
 from config import BANNED_USERS
 
-logger = logging.getLogger(__Logger(__name__)
+logger = logging.getLogger(__name__)  # ✅ FIXED - Correct syntax
 
 POWERED_BY = "🤞 **𝐏ᴏᴡєʀєᴅ 𝐁ʏ ➛ BETA BOTS.🙂❤️**"
 
@@ -124,14 +124,13 @@ async def song_download(client, message: Message, _):
                 logger.warning(f"⚠️ Download attempt {attempt + 1} failed: {download_err}")
                 
                 if attempt < max_retries - 1:
-                    await asyncio.sleep(1.5)  # Progressive delay
+                    await asyncio.sleep(1.5)
                     await status_msg.edit_text(
                         f"🔄 **Retrying download...**\n"
                         f"`Attempt {attempt + 2}/{max_retries}`\n\n"
                         f"{POWERED_BY}"
                     )
                 else:
-                    # Final attempt failed
                     raise RuntimeError(
                         f"Download failed after {max_retries} attempts. "
                         f"API may be temporarily unavailable."
@@ -188,8 +187,7 @@ async def song_download(client, message: Message, _):
             title=title[:100],
             performer="BETA BOTS",
             thumb=thumb,
-            reply_to_message_id=message.id,
-            progress=progress_callback  # Optional progress
+            reply_to_message_id=message.id
         )
         
         logger.info(f"✅ Song delivered: {title[:50]} | {file_size / 1024:.1f} KB")
@@ -219,42 +217,4 @@ async def song_download(client, message: Message, _):
         
         # ✅ SAFE FILE CLEANUP
         if file_path is not None:
-            try:
-                path_obj = Path(file_path)
-                if path_obj.exists():
-                    path_obj.unlink()
-                    logger.debug(f"🧹 Cleanup: {file_path}")
-            except Exception as cleanup_err:
-                logger.warning(f"Cleanup failed {file_path}: {cleanup_err}")
-
-
-# 🔗 AUTO YOUTUBE HANDLER
-@app.on_message(
-    filters.regex(r"https?://(?:www\.)?(?:youtube\.com|youtu\.be|music\.youtube\.com)/.+")
-    & ~filters.command(["song", "music", "audio", "mp3"])
-    & ~BANNED_USERS
-)
-@language
-async def auto_youtube_song(client, message: Message, _):
-    """🔗 Auto-download from YouTube URLs"""
-    if message.reply_to_message or message.media:
-        return
-    await song_download(client, message, _)
-
-
-# 📎 CAPTION HANDLER
-@app.on_message(
-    filters.video | filters.audio | filters.voice | filters.document
-    & filters.caption & filters.regex(r"(song|music|audio)", re.IGNORECASE)
-    & ~BANNED_USERS
-)
-@language
-async def song_from_caption(client, message: Message, _):
-    """📎 Song from media caption"""
-    await song_download(client, message, _)
-
-
-# 🔔 PROGRESS CALLBACK (Optional)
-async def progress_callback(current: int, total: int):
-    """Optional progress callback for send_audio"""
-    pass
+           
