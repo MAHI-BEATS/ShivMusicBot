@@ -1,6 +1,7 @@
 import html
 import os
 import re
+import logging
 from typing import Optional, Tuple
 
 from pyrogram import filters
@@ -11,147 +12,165 @@ from AnonXMusic import YouTube, app
 from AnonXMusic.utils.decorators.language import language
 from config import BANNED_USERS
 
+logger = logging.getLogger(__name__)
+
+POWERED_BY = "🤞 **𝐏ᴏᴡєʀєᴅ 𝐁ʏ ➛ BETA BOTS.🙂❤️**"
 
 def extract_song_query(message: Message) -> str:
-    """Extract song query from message"""
-    # Command query
+    """Extract song query from message/command/reply"""
     if message.command and len(message.command) > 1:
         return " ".join(message.command[1:]).strip()
     
-    # Reply query
     if message.reply_to_message:
-        text = (
+        return (
             message.reply_to_message.text 
             or message.reply_to_message.caption 
             or ""
-        )
-        return text.strip()
+        ).strip()
     
-    # Direct media caption
     if message.caption:
         return message.caption.strip()
     
     return ""
 
-
 def is_playlist(url: str) -> bool:
-    """Check if URL is a playlist"""
-    playlist_patterns = [
+    """Detect YouTube playlists"""
+    patterns = [
         r"playlist\?list=",
         r"/playlist\?",
-        r"list=PL"
+        r"list=PL",
+        r"playlist/"
     ]
-    return any(re.search(pattern, url, re.IGNORECASE) for pattern in playlist_patterns)
-
+    return bool(re.search("|".join(patterns), url, re.IGNORECASE))
 
 @app.on_message(
-    filters.command(["song", "music", "audio"]) 
+    filters.command(["song", "music", "audio", "mp3"]) 
     & ~BANNED_USERS
 )
 @language
-async def song_download(client: app, message: Message, _):
-    """Main song download handler"""
+async def song_download(client, message: Message, _):
+    """🎵 Main song download handler"""
     
-    # Extract query
     query = (await YouTube.url(message)) or extract_song_query(message)
     
     if not query:
         await message.reply_text(
-            "**Usage:**\n"
-            "• `/song <song name>`\n"
-            "• `/song <YouTube URL>`\n"
-            "• Reply to message with `/song`",
+            f"**🎵 Song Downloader**\n\n"
+            f"**Commands:**\n"
+            f"• `.song <song name>`\n"
+            f"• `.song <YouTube URL>`\n"
+            f"• Reply + `.song`\n\n"
+            f"**Example:**\n"
+            f"`.song kesariya`\n\n"
+            f"{POWERED_BY}",
             quote=True
         )
         return
     
-    # Check for playlists
     if is_playlist(query):
         await message.reply_text(
-            "❌ **Playlists not supported!**\n"
-            "Please send a **single YouTube track** or **search query**.",
+            f"❌ **Playlists not supported**\n\n"
+            f"📎 Send **single track URL** or **song name** only!\n\n"
+            f"{POWERED_BY}",
             quote=True
         )
         return
     
-    # Send status message
     status_msg = await message.reply_text(
-        "🔍 **Searching...BY BETA BOTS.🙂❤️...**",
-        quote=True
+        f"🔍 **Searching your song...**\n\n{POWERED_BY}"
     )
     
     try:
-        # Get YouTube details
+        logger.info(f"Searching: {query[:50]}")
         title, duration_text, duration_sec, thumb, video_id = await YouTube.details(query)
         
         if not video_id:
-            await status_msg.edit_text("❌ **No results found!**")
+            await status_msg.edit_text(
+                f"❌ **No results found!**\nTry different song name.\n\n{POWERED_BY}"
+            )
             return
         
-        await status_msg.edit_text("⬇️ **Downloading MP3...BY BETA BOTS.🙂❤️...**")
+        await status_msg.edit_text(
+            f"⬇️ **Downloading MP3...**\n\n{POWERED_BY}"
+        )
         
-        # Download audio
-        file_path, direct = await YouTube.download(
-            video_id, 
-            status_msg, 
-            videoid=True
+        file_path, _ = await YouTube.download(
+            video_id, status_msg, videoid=True
         )
         
         if not os.path.exists(file_path):
-            raise RuntimeError("Audio file not found after download")
+            raise RuntimeError("Download failed - file missing")
         
-        # Prepare caption
         user = message.from_user
-        requested_by = (
+        requester = (
             f"[{user.first_name}](tg://user?id={user.id})"
-            if user 
-            else "Unknown User"
+            if user else "Anonymous"
         )
         
         caption = (
-            f"🎵 **Title:** {html.escape(title[:50])}\n"
-            f"⏱️ **Duration:** {duration_text or 'Unknown'}\n"
-            f"👤 **Requested by:** {requested_by}\n"
-            f"🔗 **[YouTube](https://youtube.com/watch?v={video_id})**"
+            f"🎵 **{html.escape(title[:45])}**\n\n"
+            f"⏱️ **Duration:** `{duration_text or 'LIVE'}`\n"
+            f"👤 **By:** {requester}\n"
+            f"🎼 **Quality:** 320Kbps\n"
+            f"🔗 [📺 Source](https://youtube.com/watch?v={video_id})\n\n"
+            f"{POWERED_BY}"
         )
         
-        await status_msg.edit_text("📤 **Uploading MP3...BY BETA BOTS.🙂❤️...**")
+        await status_msg.edit_text(
+            f"📤 **Sending high quality MP3...**\n\n{POWERED_BY}"
+        )
         
-        # Send audio
         await app.send_audio(
             chat_id=message.chat.id,
             audio=file_path,
             caption=caption,
-            duration=duration_sec,
+            duration=duration_sec or 0,
             title=title[:100],
-            performer="AnonXMusic",
+            performer="BETA BOTS",
             thumb=thumb,
             reply_to_message_id=message.id
         )
         
-        # Cleanup
-        await status_msg.delete()
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            
-    except Exception as exc:
-        error_msg = str(exc)
+        logger.info(f"✅ Song sent: {title[:50]}")
+        
+    except Exception as e:
+        logger.error(f"Song error: {str(e)}")
         await status_msg.edit_text(
-            f"❌ **Download Failed!**\n"
-            f"`{html.escape(error_msg[:100])}`",
-            quote=True
+            f"❌ **Download Failed!**\n\n"
+            f"`{html.escape(str(e)[:80])}`\n\n"
+            f"{POWERED_BY}"
         )
+        return
+    
+    finally:
+        try:
+            await status_msg.delete()
+        except:
+            pass
+        
+        if 'file_path' in locals() and os.path.exists(file_path):
+            os.remove(file_path)
 
 
 @app.on_message(
-    filters.regex(r"https?://(?:www\.)?(?:youtube\.com|youtu\.be)/.+")
-    & ~filters.command(["song", "music", "audio"])
+    filters.regex(r"https?://(?:www\.)?(?:youtube\.com|youtu\.be|music\.youtube\.com)/.+")
+    & ~filters.command(["song", "music", "audio", "mp3"])
     & ~BANNED_USERS
 )
 @language
-async def auto_song_from_url(client: app, message: Message, _):
-    """Auto-download from YouTube URLs"""
+async def auto_youtube_song(client, message: Message, _):
+    """🔗 Auto-download from YouTube URLs"""
     if message.reply_to_message or message.media:
-        return  # Don't interfere with other handlers
-    
+        return
+    await song_download(client, message, _)
+
+
+@app.on_message(
+    filters.video | filters.audio | filters.voice | filters.document
+    & filters.caption & filters.regex(r"(song|music|audio)")
+    & ~BANNED_USERS
+)
+@language
+async def song_from_caption(client, message: Message, _):
+    """📎 Song from media caption"""
     await song_download(client, message, _)
