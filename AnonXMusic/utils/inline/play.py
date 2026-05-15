@@ -47,8 +47,9 @@ def track_markup(_, videoid, user_id, channel, fplay):
 def stream_markup_timer(_, chat_id, played, dur):
     played_sec = time_to_seconds(played)
     duration_sec = time_to_seconds(dur)
-    percentage = (played_sec / duration_sec) * 100
+    percentage = (played_sec / duration_sec) * 100 if duration_sec > 0 else 0
     umm = math.floor(percentage)
+    
     if 0 < umm <= 10: bar = "◉—————————"
     elif 10 < umm < 20: bar = "—◉————————"
     elif 20 <= umm < 30: bar = "——◉———————"
@@ -136,18 +137,15 @@ def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
     return buttons
 
 
-def queue_markup(_, videoid, chat_id, app):  # ✅ Fixed: Added 'app' parameter
+def queue_markup(_, videoid, chat_id, app):  # ✅ Fixed: Proper button creation
     s_map = get_style_map()
     buttons = [
         [
-            create_btn(text=_["S_B_3"], url=f"https://t.me/{app.username}?startgroup=true", style=s_map[5], no_emoji=True)      
-        ],
-        [
-            create_btn(text="• ᴏᴡɴᴇʀ •", url="https://t.me/ll_DEVIL_SHIV_ll", style=s_map[5], no_emoji=True),
-            create_btn(text="• ɢʀᴏᴜᴘ •", url="https://t.me/BETABOT_SUPPORT", style=s_map[5], no_emoji=True),   
-        ],
-        [
-            create_btn(text=_["CLOSE_BUTTON"], cb="close", style=s_map[5], no_emoji=True)
+            create_btn(
+                text=_["S_B_3"], 
+                url=f"https://t.me/{app.username}?startgroup=true",
+                style=s_map[5]
+            )      
         ],
     ]
     return buttons
