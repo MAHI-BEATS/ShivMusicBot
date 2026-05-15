@@ -1,8 +1,3 @@
-"""
-Active Chats Plugin for AnonXMusic
-Shows active voice/video chats and stats
-"""
-
 from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import ChatAdminRequired, UserNotParticipant, ChatForbidden
