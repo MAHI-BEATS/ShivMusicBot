@@ -35,13 +35,12 @@ def circle(img):
     output.paste(img, (0, 0), mask)
     return output
 
-def clear(text):
-    words = text.split()
-    title = ""
-    for word in words:
-        if len(title) + len(word) < 60:
-            title += " " + word
-    return title.strip()
+def clear(text, max_length=45):
+    """Shortens the text and adds '...' if it exceeds max_length."""
+    text = text.strip()
+    if len(text) > max_length:
+        return text[:max_length].rstrip() + "..."
+    return text
 
 def rounded_rectangle_mask(size, radius):
     mask = Image.new("L", size, 0)
@@ -191,7 +190,8 @@ async def get_thumb(videoid, user_id):
         draw_text_with_glow(draw, (90, 85), f"{unidecode(bot_name).upper()}", heading_font, (132, 224, 240), (132, 224, 240, 100))
         draw_text_with_glow(draw, (1500, 85), "NOW PLAYING", heading_font, (132, 224, 240), (132, 224, 240, 100))
 
-        draw.text((750, 320), clear(title), fill="white", font=title_font)
+        # Using the new clear() function to format the title
+        draw.text((750, 320), clear(title, max_length=45), fill="white", font=title_font)
         draw.text((750, 430), f"Artist: {channel}", fill=(220, 220, 220), font=small_font)
         draw.text((750, 490), f"Views: {views}", fill=(190, 190, 190), font=small_font)
         draw.text((750, 550), f"Duration: {duration}", fill=(190, 190, 190), font=small_font)
