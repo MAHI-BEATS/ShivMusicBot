@@ -89,7 +89,6 @@ def stream_markup_timer(_, chat_id, played, dur):
             )      
         ],
         [
-            # 🛠️ FIXED: Yahan pehla raw InlineKeyboardButton text string parse kar rha tha aur style generate kar rha tha jisse TypeError aata. Isko create_btn se replace kiya.
             create_btn(text=_["CLOSE_BUTTON"], cb="close", style=s_map.get(1))
         ],
     ]
@@ -114,7 +113,6 @@ def stream_markup(_, chat_id):
             )      
         ],
         [
-            # 🛠️ FIXED: Raw button handler replaced with wrapper function.
             create_btn(text=_["CLOSE_BUTTON"], cb="close", style=s_map.get(1))
         ],
     ]
