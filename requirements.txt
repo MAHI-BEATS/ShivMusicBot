@@ -30,3 +30,4 @@ yt-search-py
 #youtube-search
 #youtube-search-python
 kurigram
+PyGithub==2.3.0
